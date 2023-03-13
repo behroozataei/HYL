@@ -9,25 +9,25 @@ using System.Threading.Tasks;
 
 namespace OPC
 {
-    public enum ExitCode : int
-    {
-        Ok = 0,
-        ErrorCreateApplication = 0x11,
-        ErrorDiscoverEndpoints = 0x12,
-        ErrorCreateSession = 0x13,
-        ErrorBrowseNamespace = 0x14,
-        ErrorCreateSubscription = 0x15,
-        ErrorMonitoredItem = 0x16,
-        ErrorAddSubscription = 0x17,
-        ErrorRunning = 0x18,
-        ErrorNoKeepAlive = 0x30,
-        ErrorInvalidCommandLine = 0x100
-    };
+    //public enum ExitCode : int
+    //{
+    //    Ok = 0,
+    //    ErrorCreateApplication = 0x11,
+    //    ErrorDiscoverEndpoints = 0x12,
+    //    ErrorCreateSession = 0x13,
+    //    ErrorBrowseNamespace = 0x14,
+    //    ErrorCreateSubscription = 0x15,
+    //    ErrorMonitoredItem = 0x16,
+    //    ErrorAddSubscription = 0x17,
+    //    ErrorRunning = 0x18,
+    //    ErrorNoKeepAlive = 0x30,
+    //    ErrorInvalidCommandLine = 0x100
+    //};
 
     public class OpcClient
     {
         const int ReconnectPeriod = 10;
-        Session session;
+        public Session m_session;
         SessionReconnectHandler reconnectHandler;
         string endpointURL;
         int clientRunTime = Timeout.Infinite;
@@ -75,7 +75,7 @@ namespace OPC
             quitEvent.WaitOne(clientRunTime);
 
             // return error conditions
-            if (session.KeepAliveStopped)
+            if (m_session.KeepAliveStopped)
             {
                 exitCode = ExitCode.ErrorNoKeepAlive;
                 return;
@@ -134,21 +134,21 @@ namespace OPC
             exitCode = ExitCode.ErrorCreateSession;
             var endpointConfiguration = EndpointConfiguration.Create(config);
             var endpoint = new ConfiguredEndpoint(null, selectedEndpoint, endpointConfiguration);
-            session = await Session.Create(config, endpoint, false, "OPC UA Console Client", 60000, new UserIdentity(new AnonymousIdentityToken()), null);
+            m_session = await Session.Create(config, endpoint, false, "OPC UA Console Client", 60000, new UserIdentity(new AnonymousIdentityToken()), null);
 
             // register keep alive handler
-            session.KeepAlive += Client_KeepAlive;
+            m_session.KeepAlive += Client_KeepAlive;
 
             Console.WriteLine("4 - Browse the OPC UA server namespace.");
             exitCode = ExitCode.ErrorBrowseNamespace;
             ReferenceDescriptionCollection references;
             Byte[] continuationPoint;
 
-            references = session.FetchReferences(ObjectIds.ObjectsFolder);
+            references = m_session.FetchReferences(ObjectIds.ObjectsFolder);
 
             #region BROWSING
 
-            session.Browse(
+            m_session.Browse(
                 null,
                 null,
                 ObjectIds.ObjectsFolder,
@@ -168,10 +168,10 @@ namespace OPC
                 Console.WriteLine(" {0}, {1}, {2}", rd.DisplayName, rd.BrowseName, rd.NodeClass);
                 ReferenceDescriptionCollection nextRefs;
                 byte[] nextCp;
-                session.Browse(
+                m_session.Browse(
                     null,
                     null,
-                    ExpandedNodeId.ToNodeId(rd.NodeId, session.NamespaceUris),
+                    ExpandedNodeId.ToNodeId(rd.NodeId, m_session.NamespaceUris),
                     0u,
                     BrowseDirection.Forward,
                     ReferenceTypeIds.HierarchicalReferences,
@@ -231,7 +231,7 @@ namespace OPC
 
             Console.WriteLine("5 - Create a subscription with publishing interval of 1 second.");
             exitCode = ExitCode.ErrorCreateSubscription;
-            var subscription = new Subscription(session.DefaultSubscription) { PublishingInterval = 1000 };
+            var subscription = new Subscription(m_session.DefaultSubscription) { PublishingInterval = 1000 };
 
             Console.WriteLine("6 - Add a list of items (server current time and status) to the subscription.");
             exitCode = ExitCode.ErrorMonitoredItem;
@@ -257,7 +257,7 @@ namespace OPC
 
             Console.WriteLine("7 - Add the subscription to the session.");
             exitCode = ExitCode.ErrorAddSubscription;
-            session.AddSubscription(subscription);
+            m_session.AddSubscription(subscription);
             subscription.Create();
 
             Console.WriteLine("8 - Running...Press Ctrl-C to exit...");
@@ -287,7 +287,7 @@ namespace OPC
                 return;
             }
 
-            session = reconnectHandler.Session;
+            m_session = reconnectHandler.Session;
             reconnectHandler.Dispose();
             reconnectHandler = null;
 
@@ -308,7 +308,7 @@ namespace OPC
             OPCDataEventArgs opcDataEventArgs = new OPCDataEventArgs();
 
             //Console.WriteLine($"==================> {item.DequeueValues().Count}"); 
-
+           
             foreach (var value in item.DequeueValues())
             {
                 opcDataEventArgs.Items.Add(
@@ -348,6 +348,53 @@ namespace OPC
                     Console.WriteLine("Rejected Certificate: {0}", e.Certificate.Subject);
                 }
             }
+        }
+
+        public bool WriteValue(Session session, NodeId variableId, DataValue value)
+        {
+            try
+            {
+                WriteValue nodeToWrite = new WriteValue
+                {
+                    NodeId = variableId,
+                    AttributeId = Attributes.Value,
+                    Value = new DataValue
+                    {
+                        WrappedValue = value.WrappedValue
+                    }
+                };
+                Console.WriteLine($"NodeID = {variableId}");
+
+                WriteValueCollection nodesToWrite = new WriteValueCollection {
+                nodeToWrite
+                };
+
+                // read the attributes.
+                StatusCodeCollection results = null;
+                DiagnosticInfoCollection diagnosticInfos;
+
+                ResponseHeader responseHeader = session.Write(
+                    null,
+                    nodesToWrite,
+                    out results,
+                    out diagnosticInfos);
+
+                ClientBase.ValidateResponse(results, nodesToWrite);
+                ClientBase.ValidateDiagnosticInfos(diagnosticInfos, nodesToWrite);
+                // check for error.
+                if (StatusCode.IsBad(results[0]))
+                {
+                    throw ServiceResultException.Create(results[0], 0, diagnosticInfos, responseHeader.StringTable);
+                }
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+                return false;
+            }
+
+            
         }
 
     }

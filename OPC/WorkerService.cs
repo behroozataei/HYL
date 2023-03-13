@@ -68,12 +68,15 @@ namespace OPC
             else
                 _logger.WriteEntry("Loading data from database/redis is completed", LogLevels.Info);
 
-            _runtimeDataReceiver.Start();
+            
             Task.Factory.StartNew(() =>
             {
                 _opcManager.RunClient();
             }, TaskCreationOptions.LongRunning);
             _logger.WriteEntry("End of preparing data for OPC ... ***************************************", LogLevels.Info);
+
+
+            _runtimeDataReceiver.Start();
 
 
             return base.StartAsync(cancellationToken);

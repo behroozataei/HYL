@@ -65,24 +65,39 @@ namespace OPC
 
         private void ProcessRuntimeData(RepeatedField<MeasurementData> measurements)
         {
-            foreach (var measurement in measurements)
+            try
             {
-                var scadaPoint = _repository.GetScadaPoint(Guid.Parse(measurement.MeasurementId));
-                if (scadaPoint != null)
+                foreach (var measurement in measurements)
                 {
-                    var newQuality = (int)measurement.QualityCodes;
-
-                    if (scadaPoint.Value != measurement.Value || scadaPoint.Quality != newQuality)
+                    var _scadapoint = _repository.GetScadaPoint(Guid.Parse(measurement.MeasurementId.ToLower()));
+                    if (_scadapoint != null)
                     {
-                        scadaPoint.Value = measurement.Value;
-                        scadaPoint.Quality = newQuality;
-                        //_logger.WriteEntry($"=================================================================", LogLevels.Info);
-                        //_logger.WriteEntry($"======= >>> Scada point \"{scadaPoint.Name}\" with value \"{scadaPoint.Value}\" received.", LogLevels.Info);
+                        _scadapoint.Value = measurement.Value;
+                        _scadapoint.Quality = measurement.QualityCodes;                        
+                        if (_scadapoint.Direction.ToLower() == "output")
+                        {
+                            var _nodeId = $"ns=2;"+_repository.GetOPCOutputTageName(Guid.Parse(measurement.MeasurementId));
+                            _logger.WriteEntry($"SCADA Point \"{_scadapoint.Name}\"  with NodeId  \"{_nodeId}\"  and value  \"{_scadapoint.Value}\"  received.", LogLevels.Info);
+                            if (_nodeId != null)
+                            {
+                              _dataProcessing.ScadaPointReceived(_nodeId, _scadapoint);
 
-                        _dataProcessing.ScadaPointReceived(scadaPoint);
+                            }
+                        }
+                        if (measurement.Acknowledged)
+
+                            if (_scadapoint.Name == "OPC_Alarm")
+                            {
+                                _dataProcessing.AlarmAcked_Processing(_scadapoint);
+                            }
                     }
-                }
+                } 
+            }
+            catch(Exception ex)
+            {
+                _logger.WriteEntry(ex.Message, LogLevels.Error);
+
             }
         }
     }
-}
+} 

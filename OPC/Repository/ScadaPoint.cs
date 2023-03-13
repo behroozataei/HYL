@@ -10,10 +10,14 @@ namespace OPC
 
     public sealed class ScadaPoint
     {
-        public ScadaPoint(Guid id, float value)
+        public ScadaPoint(Guid id, string name, string networkPath, string direction,Type type)
         {
             Id = id;
-            Value = value;
+            Name = name;
+            NetworkPath = networkPath;
+            Direction = direction;
+            Type = type;
+
         }
 
         public string Name { get; }
@@ -21,6 +25,9 @@ namespace OPC
         public Guid Id { get; }
         public int Quality { get; set; }
         public float Value { get; set; }
+        public String Direction { get; set; }
+        public Type Type { get; set; }
+
 
     }
 

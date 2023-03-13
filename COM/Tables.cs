@@ -18,8 +18,8 @@ namespace COM
         public const string LSP_PRIORITYLIST = "APP:LSP_PRIORITYLIST:";
         public const string OCP_CheckPoints = "APP:OCP_CheckPoints:";
         public const string OCP_PARAMS = "APP:OCP_PARAMS:";
-        public const string OPCMeasurement = "APP:OPCMeasurement:";
-        public const string OPC_Params = "APP:OPC_Params:";
+        public const string HVLOPCMeasurement = "APP:HVLOPCMeasurement:";
+        public const string HVLOPC_Params = "APP:HVLOPC_Params:";
 
         public const string EEC_TELEGRAM = "APP:EEC_TELEGRAM:";
         public const string EEC_SFSCEAFSPRIORITY = "APP:EEC_SFSCEAFSPRIORITY:";
@@ -70,17 +70,18 @@ namespace COM
         public string Sample_Id;
         public string QualityErr_Id;
     };
-    public class OPC_MEAS_Str
+    public class HVLOPC_MEAS_Str
     {
         public string ScadaTagName;
-        public string KeepServerTagName;
+        public string KepServerTagName;
         public string Description;
         public int MessageConfiguration;
         public int TagType;
         public string NetworkPath;
         public Guid ID;
+        public string Direction;
     };
-    public class OPC_PARAM_Str
+    public class HVLOPC_PARAM_Str
     {
         public string Name;
         public string IP;
@@ -188,6 +189,7 @@ namespace COM
         public string STATUS_OF_FURNACE;
         public string FURNACE;
         public string GROUPNUM;
+        public string GROUPNUM_EEC;
         public string REASON;
     }
 

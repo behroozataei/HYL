@@ -16,12 +16,17 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="appsettings - Copy.json" />
     <None Remove="appsettings.json" />
     <None Remove="Dockerfile" />
     <None Remove="opc-entrypoint.sh" />
+    <None Remove="Resources\appsettings.json" />
   </ItemGroup>
 
   <ItemGroup>
+    <Content Include="appsettings - Copy.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="appsettings.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
@@ -32,7 +37,9 @@
     <PackageReference Include="Grpc.Core" Version="2.46.1" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="5.0.0" />
     <PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="5.0.1" />
+    <PackageReference Include="Mono.Options" Version="6.12.0.148" />
     <PackageReference Include="OPCFoundation.NetStandard.Opc.Ua" Version="1.4.366.38" />
+    <PackageReference Include="OPCFoundation.NetStandard.Opc.Ua.Client.ComplexTypes.Debug" Version="1.4.370.12" />
     <PackageReference Include="Oracle.ManagedDataAccess.Core" Version="2.19.101" />
     <PackageReference Include="StackExchange.Redis" Version="2.2.79" />
     <PackageReference Include="System.Data.SqlClient" Version="4.8.3" />
